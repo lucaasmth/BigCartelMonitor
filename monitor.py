@@ -8,14 +8,25 @@ url = config["Config"]["webhook"]
 shopname = config["Config"]["shopname"]
 delay = int(config["Config"]["delay"])
 
+old_items_list = []
+
 old_items = requests.get("https://api.bigcartel.com/%s/products.json" % shopname).json()
+for item in old_items:
+	old_items_list.append(item["id"])
+
 print("Stored already avaliable items")
 
 while True:
+	items_list = []
+
 	print("Checking products...")
 	items = requests.get("https://api.bigcartel.com/%s/products.json" % shopname).json()
-	if items != old_items:
-		for item in items:
+
+	for item in items:
+		items_list.append(item["id"])
+
+	for item in items:
+		if item["id"] not in old_items_list:
 			data = {}
 			data["username"] = (shopname + " Monitor")
 			data["embeds"] = []
@@ -29,5 +40,7 @@ while True:
 			embed["image"] = image
 			data["embeds"].append(embed)
 			requests.post(url, data=json.dumps(data), headers={"Content-Type": "application/json"})
-		old_items = items
+			print("Found new item: %s" % item["name"])
+			old_items_list.append(item["id"])
+
 	time.sleep(delay)
